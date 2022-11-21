@@ -150,17 +150,19 @@ class MyClient(discord.Client):
     async def webserver(self):
         async def api_handler(request):
             # Bad code practices occur in here 
-            # try:
-            # Gets the POST request data json
-            data = await request.json()
-            # Turns post request json data into something meaningful with my bloated LocationData class __init__ method
-            loc = LocationData(data)
-            # Generates embed, view, and sends the message
-            embed = await loc.generate_embed()
-            view = await loc.generate_view()
-            await self.channel.send(embed=embed, view=view)
-            # except Exception as e:
-            #     print("Error building data and sending message")
+            try:
+                # Gets the POST request data json
+                data = await request.json()
+                # Turns post request json data into something meaningful with my bloated LocationData class __init__ method
+                loc = LocationData(data)
+                # Prints data to make sure it's working on the backend
+                print(loc)
+                # Generates embed, view, and sends the message
+                embed = await loc.generate_embed()
+                view = await loc.generate_view()
+                await self.channel.send(embed=embed, view=view)
+            except Exception as e:
+                print("Error building data and sending message")
             # Sends response back to my phone to purge remaining data
             return web.json_response({"result":"ok"})
 
