@@ -10,7 +10,7 @@ from datetime import datetime
 from tzlocal import get_localzone
 import pyproj
 # Grabs the information from the config file
-from config import token, key, guild, channel
+from config import token, apikey, guild, channel
 
 # Class to hold all of the location data and its various functions. This serves to make the other sections of the code make far more sense, as all of the data parsing can be in one easy spot as a single object.
 class LocationData():
@@ -66,7 +66,7 @@ class LocationData():
         # Gets the address of the location using a google maps API request
         base_url = "https://maps.googleapis.com/maps/api/geocode/json?"
         latlng = "latlng="+self.coordinates.replace(" ", "")
-        key = "&key="+key
+        key = "&key="+apikey
         response = requests.post(base_url+latlng+key)
         self.address = response.json()['results'][0]['formatted_address']
 
@@ -76,7 +76,7 @@ class LocationData():
         base_url += "center="+self.coordinates.replace(" ", "")
         base_url += "&zoom=17&size=400x400&maptype=hybrid"
         base_url += "&markers=color:blue%7Clabel:V%7C"+self.coordinates.replace(" ", "")
-        base_url += "&key="+key
+        base_url += "&key="+apikey
         return base_url
     
     # Generates a static streetview based on my current location, and uses my heading to get where I'm *maybe* looking
@@ -85,7 +85,7 @@ class LocationData():
         base_url += "size=400x400"
         base_url += "&location="+self.coordinates.replace(" ", "")
         base_url += "&fov=80&heading="+str(round(self.fwd_heading))
-        base_url += "&pitch=0&key="+key
+        base_url += "&pitch=0&key="+apikey
         return base_url
     
     # Generates the embed that gets sent in chat
@@ -140,8 +140,9 @@ class MyClient(discord.Client):
     # Says it's ready and gets the channel and guild
     async def on_ready(self):
         print('Bot online!')
-        self.guild = self.get_guild(guild)
-        self.channel = self.guild.get_channel(channel)
+        print(guild)
+        self.guild = self.get_guild(int(guild))
+        self.channel = self.guild.get_channel(int(channel))
         print(f"Guild: {self.guild}")
         print(f"Channel: {self.channel}")
 
@@ -149,17 +150,17 @@ class MyClient(discord.Client):
     async def webserver(self):
         async def api_handler(request):
             # Bad code practices occur in here 
-            try:
-                # Gets the POST request data json
-                data = await request.json()
-                # Turns post request json data into something meaningful with my bloated LocationData class __init__ method
-                loc = LocationData(data)
-                # Generates embed, view, and sends the message
-                embed = await loc.generate_embed()
-                view = await loc.generate_view()
-                await self.channel.send(embed=embed, view=view)
-            except Exception as e:
-                print("Error building data and sending message")
+            # try:
+            # Gets the POST request data json
+            data = await request.json()
+            # Turns post request json data into something meaningful with my bloated LocationData class __init__ method
+            loc = LocationData(data)
+            # Generates embed, view, and sends the message
+            embed = await loc.generate_embed()
+            view = await loc.generate_view()
+            await self.channel.send(embed=embed, view=view)
+            # except Exception as e:
+            #     print("Error building data and sending message")
             # Sends response back to my phone to purge remaining data
             return web.json_response({"result":"ok"})
 
