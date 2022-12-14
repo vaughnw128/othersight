@@ -9,8 +9,13 @@ import pytz
 from datetime import datetime
 from tzlocal import get_localzone
 import pyproj
+from discord import app_commands
+from discord.ext import commands
 # Grabs the information from the config file
 from config import token, apikey, guild, channel
+
+
+MY_GUILD = discord.Object(id=int(guild))
 
 # Class to hold all of the location data and its various functions. This serves to make the other sections of the code make far more sense, as all of the data parsing can be in one easy spot as a single object.
 class LocationData():
@@ -132,11 +137,14 @@ class MapsView(discord.ui.View):
 class MyClient(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-    
+        self.tree = app_commands.CommandTree(self)
+
     # Makes a setuphook background task so that the webserver runs
     async def setup_hook(self) -> None:
         self.bg_task = self.loop.create_task(self.webserver())
-    
+        self.tree.copy_global_to(guild=MY_GUILD)
+        await self.tree.sync(guild=MY_GUILD)
+
     # Says it's ready and gets the channel and guild
     async def on_ready(self):
         print('Bot online!')
@@ -175,6 +183,12 @@ class MyClient(discord.Client):
         await self.wait_until_ready()
         await self.site.start()
 
-# Runs the bot
+#Define Client
 client = MyClient(intents=discord.Intents.default())
+
+@client.tree.command()
+async def ping(interaction: discord.Interaction):
+    await interaction.response.send_message("Pong!")
+
+# Runs the bot
 client.run(token)
